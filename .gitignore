@@ -24,6 +24,10 @@ profile.cov
 go.work
 go.work.sum
 
+# Sample go code
+hello
+greetings
+
 # env file
 .env
 
