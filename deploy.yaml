@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gcp-server
+  labels:
+    app: gcp-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gcp-server
+  template:
+    metadata:
+      labels:
+        app: gcp-server
+    spec:
+      containers:
+        - name: gcp-server
+          image: us-central1-docker.pkg.dev/gcp-server-474714/gcp-server/gcp-server:v1
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gcp-server-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: gcp-server
+  ports:
+    - port: 80
+      targetPort: 8080
