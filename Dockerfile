@@ -1,25 +1,23 @@
 # Build stage
 FROM golang:1.22-alpine AS builder
 
-WORKDIR /src
+WORKDIR /app
 
-# Go modules
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy all source (main.go + internal/)
 COPY . .
 
-# Build static binary
-RUN CGO_ENABLED=0 GOOS=linux go build -o server .
+# Build scheduler and worker binaries
+RUN CGO_ENABLED=0 GOOS=linux go build -o scheduler ./cmd/scheduler
+RUN CGO_ENABLED=0 GOOS=linux go build -o worker ./cmd/worker
 
-# Runtime stage (minimal image)
+# Runtime image
 FROM gcr.io/distroless/base-debian12
 
 WORKDIR /app
-COPY --from=builder /src/server .
+COPY --from=builder /app/scheduler /app/worker ./
 
 ENV PORT=8080
-EXPOSE 8080
-
-ENTRYPOINT ["/app/server"]
+# Default entrypoint: scheduler (worker overrides this in k8s)
+CMD ["/app/scheduler"]
